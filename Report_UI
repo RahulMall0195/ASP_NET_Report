@@ -1,0 +1,381 @@
+__________________________________________________Product_Wise_Dispatch_Quantity_Report.aspx____________________________________________
+
+<%@ Page Language="C#" MasterPageFile="~/HRM/HRM.master" EnableEventValidation="false" AutoEventWireup="true" CodeFile="Product_Wise_Dispatch_Quantity_Report.aspx.cs" Inherits="FA_MIS_Product_Wise_Dispatch_Quantity_Report" Title="Untitled Page"%>
+
+<%@ Register Assembly="Microsoft.ReportViewer.WebForms, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+    Namespace="Microsoft.Reporting.WebForms" TagPrefix="rsweb" %>
+<%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="SGG" %>
+<asp:Content ID="Content1" ContentPlaceHolderID="head" runat="Server">
+    <link href="../../css/Report.css" rel="stylesheet" type="text/css" />
+    <script src="../../../../Jquery/jquery-1.4.2.min.js" type="text/javascript"></script>
+
+    <script src="../../../../Jquery/jquery.easing-sooper.js" type="text/javascript"></script>
+
+    <script type="text/javascript" src="../../../../Jquery/jquery.sooperfish.js"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('ul.sf-menu').sooperfish();
+        });
+    </script>
+
+    <link href="../../../css/Report.css" rel="stylesheet" type="text/css" />
+
+    <script src="../../../JavaScript/rptPrint.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+         function CheckDatesMinLessMax(source, arg) {                  
+            
+            var day, month, year;
+            var fromdate = document.getElementById('<%=txtFromDate.ClientID %>');
+            var todate = document.getElementById('<%=txtToDate.ClientID %>');
+            day = fromdate.value.split("/")[0];
+            month = fromdate.value.split("/")[1];
+            year = fromdate.value.split("/")[2];
+            var fromdate1 = month + '/' + day + '/' + year;
+            day = todate.value.split("/")[0];
+            month = todate.value.split("/")[1];
+            year = todate.value.split("/")[2];
+            var todate1 = month + '/' + day + '/' + year;
+            var myDate1 = new Date(fromdate1);
+            var myDate2 = new Date(todate1);         
+                      
+          if (myDate1 <= myDate2)
+            arg.IsValid = true;
+          else
+            arg.IsValid = false;                       
+        }
+
+        function CheckDatesMonthMax(source, arg) {
+            var day, month, year;            
+            var fromdate = document.getElementById('<%=txtFromDate.ClientID %>');
+            day = fromdate.value.split("/")[0];
+            month = fromdate.value.split("/")[1];
+            year = fromdate.value.split("/")[2];
+            var fromdate1 = month + '/' + day + '/' + year;
+            var myDate1 = new Date(fromdate1);
+            var dt = new Date();
+            month = dt.getMonth();
+            day = dt.getDate();
+            year = dt.getFullYear();
+            var cdate = month + '/' + 1 + '/' + year;
+            var cDate1 = new Date(cdate);
+           
+            var BranchTypeCode ="<%=Session["BranchType_Code"]%>";
+            if(BranchTypeCode == 'BT00000002')   // for Head Office branch type code.         
+                arg.IsValid = true;           
+            else 
+            if (myDate1 < cDate1)
+                //arg.IsValid = false;
+                 arg.IsValid = true;
+            else
+                arg.IsValid = true;
+        }
+
+        function checkDate(sender, args) {
+            var dt = new Date();
+            var day = dt.getDate();
+            var month = dt.getMonth();
+            var year = dt.getFullYear();
+            var dt = new Date(year, month, day);
+            var _Predt = new Date(year, month, day - 1);
+            if (sender._selectedDate >= dt) {
+                alert("Select Previous Date.");
+                sender._selectedDate = new Date(_Predt);
+                sender._textbox.set_Value(sender._selectedDate.format(sender._format))
+            }
+        }
+    </script>
+
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="Server">
+    <table width="100%" style="overflow: scroll;">
+        <tr>
+            <td>
+                <asp:Panel ID="ErrorContainer" runat="server" CssClass="EmptyError">
+                    <asp:Label ID="MyMessage" runat="server" Font-Size="10pt"></asp:Label>
+                </asp:Panel>
+            </td>
+        </tr>
+    </table>
+    <table class="newRptParameter_tbl" cellpadding="2" cellspacing="2">
+        <tr>
+            <td class="newRptHdr_td" colspan="6" align="center">
+                Customer Wise Dispatch Schedule Report
+            </td>
+        </tr>
+        <tr>
+            <td class="newRptHdr_td_1" colspan="6" valign="middle" align="center">
+                <div id="MyDiv" runat="server">
+                    <span class="RptSelPara">Selection Parameters</span></div>
+            </td>
+        </tr>
+    </table>
+    <center>
+        <table id="tblPara" runat="server" cellpadding="2" cellspacing="2" class="newRptTable">
+            <tr>
+                <td class="Left" style="width: 13%">
+                    Region
+                </td>
+                <td class="Left" style="width: 20%">
+                    <asp:DropDownList ID="DDLArea" runat="server" CssClass="newRpt_dd" AutoPostBack="true"
+                        OnSelectedIndexChanged="DDLArea_SelectedIndexChanged">
+                        <asp:ListItem Value="0"> Select Region</asp:ListItem>
+                    </asp:DropDownList>
+                    <asp:RequiredFieldValidator Display="Dynamic" ID="RequiredDDLArea" runat="server"
+                        ValidationGroup="vin1" ControlToValidate="DDLArea" ErrorMessage="Select Area."
+                        ToolTip="Select Area." SetFocusOnError="True" InitialValue="0">*</asp:RequiredFieldValidator>
+                </td>
+                <td class="Left" style="width: 13%">
+                    Product Name
+                </td>
+                <td class="Left" style="width: 20%">
+                    <asp:DropDownList ID="ddProduct" runat="server" CssClass="newRpt_dd" AutoPostBack="True"
+                        OnSelectedIndexChanged="ddProduct_SelectedIndexChanged">
+                    </asp:DropDownList>
+                    <asp:RequiredFieldValidator ID="RequiredtxtFromDate" runat="server" ValidationGroup="vin1"
+                        Display="Dynamic" ControlToValidate="ddProduct" ErrorMessage="Select Product."
+                        ToolTip="Select Product." SetFocusOnError="True" InitialValue="0">*</asp:RequiredFieldValidator>
+                </td>
+                <td class="Left" style="width: 13%">
+                    Location
+                </td>
+                <td class="Left" style="width: 20%">
+                    <asp:DropDownList ID="ddllocation" CssClass="newRpt_dd" runat="server" AutoPostBack="True"
+                        OnSelectedIndexChanged="ddllocation_SelectedIndexChanged" Style="width: 120px">
+                    </asp:DropDownList>
+                    <%--<asp:RequiredFieldValidator Display="Dynamic" ID="Requiredddllocation" runat="server"
+                        ValidationGroup="vin1" ControlToValidate="ddllocation" ErrorMessage="Select Location."
+                        ToolTip="Select Location." InitialValue="0" SetFocusOnError="True">*</asp:RequiredFieldValidator>--%>
+                </td>
+            </tr>
+            <tr>
+                <td class="Left">
+                    Customer Name
+                </td>
+                <td class="Left">
+                    <asp:DropDownList ID="ddlCustomerName" runat="server" CssClass="newRpt_dd" Style="width: 120px">
+                    </asp:DropDownList>
+                </td>              
+                <td class="Left">
+                    From Date
+                </td>
+                <td class="Left">
+                    <asp:TextBox ID="txtFromDate" runat="server" CssClass="newRpt_date" Width="70px"></asp:TextBox>
+                    <asp:RequiredFieldValidator Display="Dynamic" ID="RequiredFieldValidator3" runat="server"
+                        ValidationGroup="vin1" ControlToValidate="txtFromDate" ErrorMessage="Select From Date."
+                        ToolTip="Select From Date." Text="*"></asp:RequiredFieldValidator>
+                    <SGG:MaskedEditExtender ID="MaskedEditExtender2" runat="server" Enabled="True"
+                        Mask="99/99/9999" MaskType="Date" TargetControlID="txtFromDate">
+                    </SGG:MaskedEditExtender>
+                    <SGG:CalendarExtender ID="CalendarExtender2" runat="server" Enabled="True"
+                        Format="dd/MM/yyyy" TargetControlID="txtFromDate" OnClientDateSelectionChanged="checkDate">
+                    </SGG:CalendarExtender>
+                    <asp:RegularExpressionValidator Display="Dynamic" ID="RegularExpressionValidator2"
+                        runat="server" ControlToValidate="txtFromDate" ErrorMessage="*" SetFocusOnError="True"
+                        ToolTip="Enter From Date in (DD/MM/YYYY) Format." ValidationExpression="^(0[1-9]|[12][0-9]|3[01])[- /.](0[1-9]|1[012])[- /.](19|20)\d\d$"
+                        ValidationGroup="vin1"></asp:RegularExpressionValidator>
+                    <asp:CustomValidator ID="CustomValidator3" runat="server" ErrorMessage="From date is not Less than 1 month before from current date"
+                        ToolTip="From date is not Less than 1 month before from current date." ClientValidationFunction="CheckDatesMonthMax"
+                        Display="Static" ValidationGroup="vin1" SetFocusOnError="True" ControlToValidate="txtFromDate">*</asp:CustomValidator>
+                    -
+                    <asp:TextBox ID="txtToDate" runat="server" CssClass="newRpt_date" Width="70px"></asp:TextBox>
+                    <asp:RequiredFieldValidator Display="Dynamic" ID="RequiredFieldValidator4" runat="server"
+                        ValidationGroup="vin1" ControlToValidate="txtToDate" ErrorMessage="Select To Date."
+                        ToolTip="Select To Date." Text="*"></asp:RequiredFieldValidator>
+                    <SGG:MaskedEditExtender ID="Maskededitextender3" runat="server" Enabled="True" Mask="99/99/9999"
+                        MaskType="Date" TargetControlID="txtToDate">
+                    </SGG:MaskedEditExtender>
+                    <SGG:CalendarExtender ID="Calendarextender3" runat="server" Enabled="True" Format="dd/MM/yyyy"
+                        TargetControlID="txtToDate" OnClientDateSelectionChanged="checkDate">
+                    </SGG:CalendarExtender>
+                    <asp:RegularExpressionValidator Display="Dynamic" ID="RegularExpressionValidator3"
+                        runat="server" ControlToValidate="txtToDate" ErrorMessage="*" SetFocusOnError="True"
+                        ToolTip="Enter From Date in (DD/MM/YYYY) Format." ValidationExpression="^(0[1-9]|[12][0-9]|3[01])[- /.](0[1-9]|1[012])[- /.](19|20)\d\d$"
+                        ValidationGroup="vin1"></asp:RegularExpressionValidator>
+                    <asp:CustomValidator ID="CustomValidator4" runat="server" ErrorMessage="To date is not less than from date."
+                        ToolTip="To date is not less than from date." ClientValidationFunction="CheckDatesMinLessMax"
+                        Display="Static" ValidationGroup="vin1" SetFocusOnError="True" ControlToValidate="txtToDate"> *</asp:CustomValidator>
+                </td>
+            </tr>
+          
+            <tr>
+                <td colspan="6" valign="middle" align="center">
+                    <asp:Button ID="btnShow" runat="server" Text="Show Report" CssClass="newRpt_btn"
+                        OnClick="btnShow_Click" ValidationGroup="vin1" />
+                    <asp:Button ID="btnPrint" runat="server" Text="Print Report" CssClass="newRpt_btn"
+                        OnClick="btnPrint_Click" ValidationGroup="vin1" />
+                    <asp:ValidationSummary ID="ValidationSummary2" ValidationGroup="vin1" ShowMessageBox="true"
+                        ShowSummary="false" runat="server" />
+                </td>
+            </tr>
+        </table>
+    </center>
+    <table class="newRptParameter_tbl" id="tblrpt" runat="server" cellpadding="2" cellspacing="2">
+        <tr align="center">
+            <td colspan="6" align="center">
+                <div>
+                    <rsweb:ReportViewer ID="ReportViewer1" runat="server" Font-Names="Verdana" Font-Size="8pt"
+                        Height="500px" Width="90%" CssClass="newRptViewer" ShowToolBar="False" ShowPrintButton="true"
+                        ShowExportControls="true" ShowCredentialPrompts="False" ShowDocumentMapButton="False"
+                        ShowFindControls="False" ShowPageNavigationControls="False" ShowParameterPrompts="False"
+                        ShowPromptAreaButton="False" DocumentMapWidth="100%" EnableTheming="True" DocumentMapCollapsed="False">
+                    </rsweb:ReportViewer>
+                </div>
+            </td>
+        </tr>
+    </table>
+</asp:Content>
+
+_________________________________________________Product_Wise_Dispatch_Quantity_Report.aspx.cs__________________________________________________
+using System;
+using System.Collections;
+using System.Configuration;
+using System.Data;
+using System.Web;
+using System.Web.Security;
+using System.Web.UI;
+using System.Web.UI.HtmlControls;
+using System.Web.UI.WebControls;
+using System.Web.UI.WebControls.WebParts;
+
+public partial class FA_MIS_Product_Wise_Dispatch_Quantity_Report : System.Web.UI.Page
+{
+   
+    BALSGX_SelectCommonMaster CommonMaster = new BALSGX_SelectCommonMaster();
+    Message msg = new Message();
+    BALSGXMIS_MSMIS msmis = new BALSGXMIS_MSMIS();
+    BALSGXMIS_BillingMIS_V2 billmis_v2 = new BALSGXMIS_BillingMIS_V2();
+   
+    protected void Page_Load(object sender, EventArgs e)
+    {
+       // Master.MasterPageVariable = "BillingMIS";
+        MyDiv.Attributes["onclick"] = ClientScript.GetPostBackEventReference(this, "MyDiv");
+        tblPara.Visible = true;
+        tblrpt.Visible = false;
+
+        if (!IsPostBack)
+        {
+            FILL_Area();
+            FillLocation();
+            FillCustomer("0", Session["Employee_Code"].ToString());
+            FillProduct();     
+        }
+    }
+
+    private void FILL_Area()
+    {
+        DataTable dt = CommonMaster.SelectState_1(Session["Employee_Code"].ToString());
+        if (dt.Rows.Count > 0)
+        {
+            DDLArea.DataSource = dt;
+            DDLArea.DataTextField = "State_Name";
+            DDLArea.DataValueField = "State_Code";
+            DDLArea.DataBind();
+            DDLArea.Items.Insert(0, new ListItem("Select Region", "0"));
+        }
+        else
+        {
+            DDLArea.DataSource = null;
+            DDLArea.DataBind();
+            DDLArea.Items.Insert(0, new ListItem("Select Region", "0"));
+        }
+    }
+
+    private void FillCustomer(string loc, string emp)
+    {
+        ddlCustomerName.ClearSelection();
+        ddlCustomerName.Items.Clear();
+
+        DataTable dt_cust = billmis_v2.fillCustomer(loc, emp); //Session["Employee_Code"].ToString()
+        // dv.RowFilter = "Product='" + ddProduct.SelectedValue + "'";
+        DataView dv = dt_cust.DefaultView;
+        if (DDLArea.SelectedValue.Trim() == "RJ")
+            dv.RowFilter = "State_Code='" + DDLArea.SelectedValue + "'";
+        else
+            dv.RowFilter = "Product='" + ddProduct.SelectedValue + "'";
+
+        if (dv.ToTable().Rows.Count > 0)
+        {
+            dv.Sort = "custName ASC";
+            ddlCustomerName.DataSource = dv;
+            ddlCustomerName.DataTextField = "custName";
+            ddlCustomerName.DataValueField = "custCode";
+            ddlCustomerName.DataBind();
+        }
+
+        ddlCustomerName.Items.Insert(0, new ListItem("All Customer Name", "0"));
+    }
+
+    private void FillLocation()
+    {
+        DataTable dt_loc = billmis_v2.fillLocation(Session["Employee_Code"].ToString());
+        DataView dv_loc = (DataView)dt_loc.DefaultView;
+
+        dv_loc.RowFilter = "ProductCode='" + ddProduct.SelectedValue.ToString() + "'";
+
+        if (dt_loc.Rows.Count > 0)
+        {
+            ddllocation.DataSource = dv_loc;
+            ddllocation.DataTextField = "locationName";
+            ddllocation.DataValueField = "locationCode";
+            ddllocation.DataBind();
+        }
+        ddllocation.Items.Insert(0, new ListItem("All Location", "0"));
+    }
+
+    private void FillProduct()
+    {
+        ddProduct.ClearSelection();
+        ddProduct.Items.Clear();
+
+        DataTable dt_pro = billmis_v2.fillProduct();
+        DataView dtView = dt_pro.DefaultView;
+
+        dtView.RowFilter = "State_Code='" + DDLArea.SelectedValue.ToString() + "'";
+
+        if (dtView.Count > 0)
+        {
+            ddProduct.DataSource = dt_pro;
+            ddProduct.DataTextField = "productName";
+            ddProduct.DataValueField = "productCode";
+            ddProduct.DataBind();
+        }
+        ddProduct.Items.Insert(0, new ListItem("Select Product", "0"));
+    }
+
+
+    protected void DDLArea_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        FillProduct();
+        FillCustomer("0", Session["Employee_Code"].ToString());
+    }
+    protected void ddProduct_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        FillLocation();
+        FillCustomer("0", Session["Employee_Code"].ToString());
+    }
+
+    protected void ddllocation_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        FillCustomer(ddllocation.SelectedValue, Session["Employee_Code"].ToString());
+    }
+
+   
+    protected void btnShow_Click(object sender, EventArgs e)
+    {
+        
+    }
+
+
+    protected void btnPrint_Click(object sender, EventArgs e)
+    {
+        // Use For Printing
+        PrintRdlc PrintReport = new PrintRdlc();
+        PrintReport.Export(ReportViewer1.LocalReport);
+        PrintReport.m_currentPageIndex = 0;
+        PrintReport.Print(); 
+    }
+   
+}
+
